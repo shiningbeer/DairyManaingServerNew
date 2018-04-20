@@ -4,14 +4,6 @@ var jwt=require('jwt-simple')
 var moment=require('moment')
 
 
-const TASK_STATUS = {
-    wrong: -1,
-    new: 0,
-    paused: 1,
-    ongoing:2,
-    completed: 3
-  }
-
 const connectDB=(callback)=>{
     dbo.connect("mongodb://localhost:27017", 'nodeDB',callback )
 }
@@ -25,7 +17,7 @@ const myMiddleWare={
             var token=req.get('token')
             let tokenContainedInfo
             try{
-              tokenContainedInfo=jwt.decode(token,'secrettt')    
+              tokenContainedInfo=jwt.decode(token,'whatistoken')    
             }
             catch (e){
               console.log('token wrong!')
@@ -88,10 +80,10 @@ const task={
         })
       },
     syncStatus: (req, res) => {
-        var taskId = req.body.taskId
-        if (taskId == null) 
+        var {taskId,status} = req.body
+        if (taskId == null||status==null) 
           return res.sendStatus(415)
-        var update={}
+        var update={operStatus:status}
         dbo.task.update(taskId,update,(err)=>{
           err ? res.sendStatus(500) : res.sendStatus(200)
         })

@@ -4,13 +4,17 @@ var nodeApi=require('./nodeApi')
 var jwt=require('jwt-simple')
 var fs = require('fs')
 
-const TASK_STATUS = {
-    wrong: -1,
+const OPER_STATUS = {
     new: 0,
-    paused: 1,
-    ongoing:2,
-    completed: 3
+    complete:1,
+    implement: 2,
+    paused:-1,
   }
+const IMPL_STATUS={
+  wrong:-1,
+  complete:1,
+  normal:0
+}
 
 const SYNC_STATUS={
     ok:0,
@@ -110,13 +114,13 @@ const user={
   
 
 
-const changeTaskStatus=async (req,res,status)=>{
+const changeTaskStatus=async (req,res,newOperStatus)=>{
     var {taskId} = req.body
     if (taskId == null)
         return res.sendStatus(415)
     //更新nodetask的status
     await new Promise((resolve, reject) => {
-        dbo.nodeTask.update_by_taskId({taskId},{status:status},(err,result)=>{
+        dbo.nodeTask.update_by_taskId(taskId,{operStatus:newOperStatus},(err,result)=>{
             resolve(err)
         })
     });
@@ -127,6 +131,7 @@ const changeTaskStatus=async (req,res,status)=>{
         })
     });
     //与节点同步任务状态 
+    let allOK=true
     for(var nodetask of nodetasks){
         //取出节点信息
         var nodeInfo = await new Promise((resolve, reject) => {
@@ -136,19 +141,23 @@ const changeTaskStatus=async (req,res,status)=>{
         });
         //访问节点，同步任务状态
         var syncCode = await new Promise((resolve, reject) => {
-            nodeApi.nodeTask.syncStatus(nodeInfo.url,nodeInfo.token,status,(code,body)=>{
+            nodeApi.nodeTask.syncStatus(nodeInfo.url,nodeInfo.token,nodetask._id,newOperStatus,(code,body)=>{
                 resolve(code)
             })
         });
-        let status=syncCode==200?TASK_STATUS.ongoing:TASK_STATUS.wrong
+        let implStatus=syncCode==200?IMPL_STATUS.normal:IMPL_STATUS.wrong
         let syncStatus=syncCode==200?SYNC_STATUS.ok:SYNC_STATUS.not_sync
-        dbo.nodeTask.update_by_nodeTaskId(nodetask._id,{syncStatus,status},(err,rest)=>{})
+        console.log(syncCode)
+        if(syncCode!=200)
+            allOK=false
+        dbo.nodeTask.update_by_nodeTaskId(nodetask._id,{syncStatus,implStatus},(err,rest)=>{})
 
     }
     //最后更新task的status
-    dbo.task.update_by_taskId(taskId,{status:status},(err,rest)=>{
-        err ? res.sendStatus(500) : res.json('ok')
-        })
+    let implStatus=allOK?IMPL_STATUS.normal:IMPL_STATUS.wrong
+    dbo.task.update_by_taskId(taskId,{operStatus:newOperStatus,implStatus},(err,rest)=>{
+      err ? res.sendStatus(500) : res.json('ok')
+    })
 }
 
   const task={
@@ -163,7 +172,8 @@ const changeTaskStatus=async (req,res,status)=>{
         createdAt: Date.now(),
         user:req.tokenContainedInfo.user,
         percent:0,
-        status:TASK_STATUS.new
+        operStatus:OPER_STATUS.new,
+        implStatus:IMPL_STATUS.normal,
       }
       dbo.task.add(newTaskToAdd, (err,rest) => {
         err ? res.sendStatus(500) : res.json('ok')
@@ -176,6 +186,7 @@ const changeTaskStatus=async (req,res,status)=>{
       dbo.task.del(id, (err,rest) => {
         err ? res.sendStatus(500) : res.json('ok')
       })
+
       //待做：删除相应nodetask，通知节点该任务删除
     },
     start:(req, res) => {
@@ -202,6 +213,7 @@ const changeTaskStatus=async (req,res,status)=>{
         var {ipDispatch}=require('./ipdispatch')
         const {totalsum,dispatchList}=ipDispatch(allIpRange,length)
         //每个节点分配ip，产生一个nodetask
+        let allOK=true
         for(let i=0;i<length;i++){
           const {count,range}=dispatchList[i]
           let newNodeTask={
@@ -210,6 +222,8 @@ const changeTaskStatus=async (req,res,status)=>{
             ipRange:range,
             ipCount:count,
             createdAt:Date.now(),
+            operStatus:OPER_STATUS.implement,
+            implStatus:IMPL_STATUS.normal,
           }
           //获取这个node的url，token
           var nodeInfo = await new Promise((resolve, reject) => {
@@ -233,14 +247,17 @@ const changeTaskStatus=async (req,res,status)=>{
             })
           });
           //节点返回200则说明同步成功，更新到nodetask，否则为同步失败，即这条任务与节点不一致
-          let status=syncCode==200?TASK_STATUS.ongoing:TASK_STATUS.wrong
-          let syncStatus=syncCode==200?SYNC_STATUS.ok:SYNC_STATUS.not_received  
-          dbo.nodeTask.update_by_nodeTaskId(insertedId,{syncStatus,status},(err,rest)=>{})
+          let implStatus=syncCode==200?IMPL_STATUS.normal:IMPL_STATUS.wrong
+          let syncStatus=syncCode==200?SYNC_STATUS.ok:SYNC_STATUS.not_received
+          if(syncCode!=200)
+            allOK=false
+          dbo.nodeTask.update_by_nodeTaskId(insertedId,{syncStatus,implStatus},(err,rest)=>{})
     
           //待做：访问节点是否有插件，如果没有则异步发送插件
         }
         //更改任务状态
-        dbo.task.update_by_taskId(task.id,{startAt:Date.now(),status:TASK_STATUS.ongoing},(err,rest)=>{
+        let implStatus=allOK?IMPL_STATUS.normal:IMPL_STATUS.wrong
+        dbo.task.update_by_taskId(task.id,{startAt:Date.now(),operStatus:OPER_STATUS.implement,implStatus},(err,rest)=>{
           err ? res.sendStatus(500) : res.json('ok')
         })
         
@@ -248,10 +265,10 @@ const changeTaskStatus=async (req,res,status)=>{
       asyncActions()
     },
     pause:(req, res) => {
-        changeTaskStatus(req,res,TASK_STATUS.paused)
+        changeTaskStatus(req,res,OPER_STATUS.paused)
     },
     resume:(req, res) => {
-        changeTaskStatus(req,res,TASK_STATUS.ongoing)
+        changeTaskStatus(req,res,OPER_STATUS.implement)
     },
     get: (req, res) => {
       var condition = req.body

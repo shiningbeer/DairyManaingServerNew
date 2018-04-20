@@ -53,16 +53,14 @@ var task={
         insert(TABLES.task, newNodeTask, callback)
     },
     del : (taskId, callback) => {
-        var _id=ObjectId(taskId)
         var wherestr = {
-            _id: _id
+            nodeTaskId: taskId
         }
         del(TABLES.task, wherestr, callback)
     },
     update: (taskId, update,callback) => {
-        var _id=ObjectId(taskId)
         var wherestr = {
-            _id: _id
+            nodeTaskId: taskId
         }
         var updatestr = {
             $set: update

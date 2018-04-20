@@ -25,10 +25,10 @@ var postJson = (url,token,param, callback) => {
 
 var nodeTask={
     add: (url_base,token,newNodeTask,callback) => {
-        postJson(url_base+'/nodetask/add',token,{newNodeTask}, callback)
+        postJson(url_base+'/task/add',token,{newNodeTask}, callback)
     },
-    syncStatus:(url_base,token,status,callback) => {
-        postJson(url_base+'/nodetask/syncstatus',token,{status}, callback)
+    syncStatus:(url_base,token,taskid,status,callback) => {
+        postJson(url_base+'/task/syncstatus',token,{taskId:taskid,status:status}, callback)
     },
     // del:(id, callback) => {
     //     var param = {
