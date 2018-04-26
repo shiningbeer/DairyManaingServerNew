@@ -5,6 +5,7 @@ var dbo
 const TABLES = {
     user:'user',
     task: 'task',
+    workingTask:'workingTask',
     setting:'setting'
 }
 
@@ -20,20 +21,20 @@ var connect = (url, dbname, callback) => {
 /* basic crub operation */
 var insert = (col, insobj, callback) => {
     dbo.collection(col).insertOne(insobj, (err, rest) => {
-        callback(err)
+        callback(err,rest)
     })
 }
 
 var del = (col, wherestr, callback) => {
-    dbo.collection(col).deleteOne(wherestr, (err, rest) => {
-        callback(err)
+    dbo.collection(col).deleteMany(wherestr, (err, rest) => {
+        callback(err,rest)
 
     })
 }
 
 var mod = (col, wherestr, updatestr, callback) => {
-    dbo.collection(col).updateOne(wherestr, updatestr, (err, rest) => {
-        callback(err)
+    dbo.collection(col).updateMany(wherestr, updatestr, (err, rest) => {
+        callback(err,rest)
 
     })
 }
@@ -69,6 +70,29 @@ var task={
     },    
     get :(wherestr,callback)=>{
         find(TABLES.task,wherestr,callback)
+    }
+}
+var workingtask={
+    add : (newWorkingTask, callback) => {
+        insert(TABLES.workingTask,newWorkingTask, callback)
+    },
+    del : (taskId, callback) => {
+        var wherestr = {
+            nodeTaskId: taskId
+        }
+        del(TABLES.workingTask, wherestr, callback)
+    },
+    update: (taskId, update,callback) => {
+        var wherestr = {
+            nodeTaskId: taskId
+        }
+        var updatestr = {
+            $set: update
+        }
+        mod(TABLES.workingTask, wherestr, updatestr,callback)
+    },    
+    get :(wherestr,callback)=>{
+        find(TABLES.workingTask,wherestr,callback)
     }
 }
 

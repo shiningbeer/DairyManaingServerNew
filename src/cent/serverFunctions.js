@@ -6,14 +6,17 @@ var fs = require('fs')
 
 const OPER_STATUS = {
     new: 0,
-    complete:1,
-    implement: 2,
-    paused:-1,
+    implement:1,
+    paused:2,
+    complete:3,
+    deleted:-1
+    
+    
   }
 const IMPL_STATUS={
-  wrong:-1,
+  wrong:-1,  
+  normal:0,
   complete:1,
-  normal:0
 }
 
 const SYNC_STATUS={
@@ -180,22 +183,56 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
       })
     },
     delete:(req, res) => {
-      var id = req.body.taskId
-      if (id == null) 
+      var taskId = req.body.taskId
+      if (taskId == null) 
         return res.sendStatus(415)
-      dbo.task.del(id, (err,rest) => {
-        err ? res.sendStatus(500) : res.json('ok')
-      })
+      dbo.task.del(taskId, (err,rest) => {})
+      var asyncActions=async()=>{
+        //获得这个任务的所有nodetask
+        var nodetasks = await new Promise((resolve, reject) => {
+          dbo.nodeTask.get({taskId},(err,result)=>{
+              resolve(result)
+          })
+        });
+        //通知各节点删除任务
+        for(var nodetask of nodetasks){
+          //取出节点信息
+          var nodeInfo = await new Promise((resolve, reject) => {
+              dbo.node.getOne(nodetask.node._id,(err,result)=>{
+                  resolve(result)
+              })
+          });
+          //访问节点，删除任务
+          var syncCode = await new Promise((resolve, reject) => {
+              nodeApi.nodeTask.delete(nodeInfo.url,nodeInfo.token,nodetask._id,(code,body)=>{
+                  resolve(code)
+              })
+          });
+          console.log(syncCode)
+          //如果返回正确，则删除该nodetask
+          if(syncCode==200){
+            dbo.nodeTask.del_by_nodeTaskId(nodetask._id,(err,result)=>{})
+          }
+          //如果未正确返回，则置operStatus为删除，syncStatus为not_sync，留待定时任务再次尝试删除
+          else{
+            dbo.nodeTask.update_by_nodeTaskId(nodetask._id,{operStatus:OPER_STATUS.deleted,syncStatus:SYNC_STATUS.not_sync},(err,result)=>{})
+          }
+          
+            
+        }
+      }
+      asyncActions()
+      
+      res.json('ok')
 
-      //待做：删除相应nodetask，通知节点该任务删除
+      
     },
     start:(req, res) => {
       var task = req.body.task
       var nodes = req.body.nodeList
       if (task == null||nodes==null) 
         return res.sendStatus(415)
-    
-      var {targetList}=task
+      var {targetList,pluginList}=task
       //以下代码假定数据库操作不出问题，未作处理
       var asyncActions=async () => {
         let allIpRange=[]
@@ -220,6 +257,7 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
             taskId:task.id,
             node:nodes[i],
             ipRange:range,
+            pluginList,
             ipCount:count,
             createdAt:Date.now(),
             operStatus:OPER_STATUS.implement,
@@ -331,6 +369,7 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
         ...newTarget,
         usedCount:8,
         ipTotal:6555,
+        lines:newTarget.ipRange.length,
         createdby:req.tokenContainedInfo.user
       }
       dbo.target.add(newTargetToAdd, (err,rest) => {
@@ -372,15 +411,49 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
         fs.renameSync(uploadDir + file.filename, uploadDir + file.originalname)
       }
       catch(e){
-        return res.sendStatus(500)
+        return res.sendStatus(501)
       }
-      res.sendStatus(200)
+      //待做：如果已有同名插件，不添加记录
+      //将插件名加入数据库
+      var newplugin={
+        name:file.originalname,
+        user:req.tokenContainedInfo.user,
+        description:'',
+        protocal:'',
+        usedCount:0,
+        port:'',
+        uploadAt: Date.now(),   
+      }
+      dbo.plugin.add(newplugin,(err,rest)=>{
+        err ? res.sendStatus(500) : res.json('ok')
+      })
     },
     delete: (req, res) => {
       var pluginName = req.body.pluginName
       if (pluginName == null) 
         return res.sendStatus(415)  
-      fs.unlink(uploadDir+'/'+pluginName, (err)=>{
+
+      var asyncActions=async()=>{
+        var err=await new Promise((resolve,reject)=>{
+          fs.unlink(uploadDir+'/'+pluginName, (err)=>{
+            resolve(err)
+          })
+        })
+        if(err)
+          return res.sendStatus(500)
+        dbo.plugin.del_by_name(pluginName,(err,rest)=>{
+          err ? res.sendStatus(500) : res.json('ok')
+        })
+
+      }
+      asyncActions()
+
+    },
+    update:(req, res) => {
+      const {name,update}=req.body
+      if(name==null||update==null)
+        return res.sendStatus(415)  
+      dbo.plugin.update_by_name(name,update,(err,rest)=>{
         err ? res.sendStatus(500) : res.json('ok')
       })
     },
@@ -394,17 +467,21 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
       }
       
       let result=[]
-      for(var item of plugins){
-        var oneplugin={
-          name:item,
-          user:'admin',
-          des:'',
-          usedCount:8,
-          uploadAt: Date.now(),   
+      var asyncActions=async()=>{
+        for(var item of plugins){
+          var oneplugin=await new Promise((resolve,reject)=>{
+            dbo.plugin.getOne_by_name(item,(err,rest)=>{
+              err?resolve(null):resolve(rest)
+            })
+          })
+          if(oneplugin!=null)
+              result.push(oneplugin)
         }
-        result.push(oneplugin)
+        res.json(result)
       }
-      res.json(result)
+      asyncActions()
+      
+      
     },
   }
   const connectDB=(callback)=>{

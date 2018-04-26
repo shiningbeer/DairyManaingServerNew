@@ -25,29 +25,18 @@ var postJson = (url,token,param, callback) => {
 
 var nodeTask={
     add: (url_base,token,newNodeTask,callback) => {
-        postJson(url_base+'/task/add',token,{newNodeTask}, callback)
+        var param = {newNodeTask}
+        postJson(url_base+'/task/add',token,param, callback)
     },
     syncStatus:(url_base,token,taskid,status,callback) => {
-        postJson(url_base+'/task/syncstatus',token,{taskId:taskid,status:status}, callback)
+        var param={taskId:taskid,status:status}
+        postJson(url_base+'/task/syncstatus',token,param, callback)
     },
-    // del:(id, callback) => {
-    //     var param = {
-    //         nodeTaskId: id
-    //     }
-    //     postJson(url_base+'/nodetask/delete', param, callback)
-    // },
-    // start:(id, callback)=>{
-    //     var param = {
-    //         nodeTaskId: id
-    //     }
-    //     postJson(api.nodeTask.start, param, callback)
-    // },
-    // pause:(id, callback)=>{
-    //     var param = {
-    //         nodeTaskId: id
-    //     }
-    //     postJson(api.nodeTask.pause, param, callback)
-    // },
+    delete:(url_base,token,nodeTaskId, callback) => {
+        var param = {nodeTaskId}
+        postJson(url_base+'/task/delete',token, param, callback)
+    },
+
     // get:(condition={}, callback)=>{
     //     var param={
     //         condition:condition

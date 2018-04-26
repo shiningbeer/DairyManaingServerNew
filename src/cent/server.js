@@ -58,6 +58,7 @@ app.post('/target/get', target.get)
 //plugin
 app.post('/plugin/add', upload.single('file'),plugin.add )
 app.post('/plugin/delete',plugin.delete)
+app.post('/plugin/update',plugin.update)
 app.post('/plugin/get', plugin.get)
 
 

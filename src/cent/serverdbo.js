@@ -28,14 +28,14 @@ var insert = (col, insobj, callback) => {
 }
 
 var del = (col, wherestr, callback) => {
-    dbo.collection(col).deleteOne(wherestr, (err, rest) => {
+    dbo.collection(col).deleteMany(wherestr, (err, rest) => {
         callback(err,rest)
 
     })
 }
 
 var mod = (col, wherestr, updatestr, callback) => {
-    dbo.collection(col).updateOne(wherestr, updatestr, (err, rest) => {
+    dbo.collection(col).updateMany(wherestr, updatestr, (err, rest) => {
         callback(err,rest)
 
     })
@@ -118,7 +118,8 @@ var task={
             _id: _id
         }
         findOne(TABLES.task,wherestr,callback)
-    }
+    },
+    
 
 
 }
@@ -157,7 +158,31 @@ var node={
     }
 
 }
+//plugin
+var plugin={
+    add : (newplugin, callback) => {
+        insert(TABLES.plugin, newplugin, callback)
+    },
+    del_by_name : (name, callback) => {
+        var wherestr = {name}
+        del(TABLES.plugin, wherestr, callback)
+    },
+    update_by_name : (name,update,callback) => {
+        var wherestr = {name}
+        var updatestr = {
+            $set: update
+        }
+        mod(TABLES.plugin, wherestr, updatestr,callback)
+    },
+    get :(wherestr,callback)=>{
+        find(TABLES.plugin,wherestr,callback)
+    },
 
+    getOne_by_name:(name,callback)=>{
+        var wherestr = {name:name}
+        findOne(TABLES.plugin,wherestr,callback)
+    }
+}
 //target
 var target={
     add : (newTarget, callback) => {
@@ -241,5 +266,6 @@ module.exports = {
     node,
     target,
     user,
-    nodeTask
+    nodeTask,
+    plugin
 }

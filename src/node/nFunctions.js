@@ -58,16 +58,26 @@ const task={
           return res.sendStatus(415)
       
         //todo: verify validity of newNodeTask
-      
-        dbo.task.add(newNodeTask, (err) => {
-          err ? res.sendStatus(500) : res.sendStatus(200)
-        })
+        var {pluginList}=newNodeTask
+        delete newNodeTask.pluginList
+        for(var plugin of pluginList){
+          var task={
+            ...newNodeTask,
+            plugin,
+          }
+          dbo.task.add(task, (err,rest) => {
+            if(err)
+              res.sendStatus(500)
+          })
+        }
+        res.sendStatus(200)
+        
       },
     delete:(req, res) => {
-        var taskId = req.body.taskId
-        if (taskId == null) 
+        var nodeTaskId = req.body.nodeTaskId
+        if (nodeTaskId == null) 
           return res.sendStatus(415)  
-        dbo.task.del(taskId,(err)=>{
+        dbo.task.del(nodeTaskId,(err,rest)=>{
           err ? res.sendStatus(500) : res.sendStatus(200)
         })
       },
@@ -84,7 +94,7 @@ const task={
         if (taskId == null||status==null) 
           return res.sendStatus(415)
         var update={operStatus:status}
-        dbo.task.update(taskId,update,(err)=>{
+        dbo.task.update(taskId,update,(err,rest)=>{
           err ? res.sendStatus(500) : res.sendStatus(200)
         })
       },
@@ -107,7 +117,7 @@ const plugin={
         var pluginName = req.body.pluginName
         if (pluginName == null) 
           return res.sendStatus(415)  
-        fs.unlink(uploadDir+'/'+pluginName, (err)=>{
+        fs.unlink(uploadDir+'/'+pluginName, (err,rest)=>{
           err ? res.sendStatus(500) : res.sendStatus(200)
         })
       },
@@ -131,7 +141,7 @@ const setting={
         var value=req.body.value
         if (key==null||value==null)
           return res.sendStatus(415)
-        dbo.setting.add(key,value, (err) => {
+        dbo.setting.add(key,value, (err,rest) => {
           err ? res.sendStatus(500) : res.sendStatus(200)
         })
       },
@@ -139,7 +149,7 @@ const setting={
         var key=req.body.key
         if (key == null) 
           return res.sendStatus(415)  
-        dbo.setting.del(key,(err)=>{
+        dbo.setting.del(key,(err,rest)=>{
           err ? res.sendStatus(500) : res.sendStatus(200)
         })
       },
@@ -148,7 +158,7 @@ const setting={
         var value=req.body.value
         if (key==null||value==null)
           return res.sendStatus(415)
-        dbo.setting.update(key,value,(err)=>{
+        dbo.setting.update(key,value,(err,rest)=>{
           err ? res.sendStatus(500) : res.sendStatus(200)
         })
       },
