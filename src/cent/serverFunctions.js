@@ -10,8 +10,6 @@ const OPER_STATUS = {
     paused:2,
     complete:3,
     deleted:-1
-    
-    
   }
 const IMPL_STATUS={
   wrong:-1,  
@@ -235,7 +233,8 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
       var {targetList,pluginList}=task
       //以下代码假定数据库操作不出问题，未作处理
       var asyncActions=async () => {
-        let allIpRange=[]
+        let allIpRange=[],totalsum=0
+
         //合并所有目标的ip
         for(var target of targetList){
           var iprange = await new Promise((resolve, reject) => {
@@ -244,24 +243,30 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
             })
           });
           allIpRange.push(...iprange.ipRange)
+          totalsum=totalsum+iprange.ipTotal
         }
         //按节点个数划分ip
-        let length=nodes.length
-        var {ipDispatch}=require('./ipdispatch')
-        const {totalsum,dispatchList}=ipDispatch(allIpRange,length)
+        // var {ipDispatch}=require('./ipdispatch')
+        // const {totalsum,dispatchList}=ipDispatch(allIpRange,length)
+        
+        //改成按节点个数划分行数
+        var {ipDispatch}=require('./ipdispatch2')
+        let dispatchList=ipDispatch(allIpRange,nodes.length)
+        console.log(dispatchList)
         //每个节点分配ip，产生一个nodetask
         let allOK=true
-        for(let i=0;i<length;i++){
-          const {count,range}=dispatchList[i]
+        for(let i=0;i<nodes.length;i++){          
           let newNodeTask={
             taskId:task.id,
             node:nodes[i],
-            ipRange:range,
+            ipRange:dispatchList[i],
             pluginList,
-            ipCount:count,
+            ipCount:65555,
             createdAt:Date.now(),
             operStatus:OPER_STATUS.implement,
             implStatus:IMPL_STATUS.normal,
+            progress:0,            
+            ipCountInFact:65,
           }
           //获取这个node的url，token
           var nodeInfo = await new Promise((resolve, reject) => {

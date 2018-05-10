@@ -58,12 +58,20 @@ const task={
           return res.sendStatus(415)
       
         //todo: verify validity of newNodeTask
-        var {pluginList}=newNodeTask
+        var {pluginList,ipRange,nodeTaskId}=newNodeTask
+        let stringIp=''
+        for(var ip of ipRange){
+            stringIp=stringIp+ip+'\n'
+        }
+        fs.writeFileSync('./targets/'+nodeTaskId,stringIp)
+        delete newNodeTask.ipRange
+        
         delete newNodeTask.pluginList
         for(var plugin of pluginList){
           var task={
             ...newNodeTask,
             plugin,
+            zmap:0,
           }
           dbo.task.add(task, (err,rest) => {
             if(err)

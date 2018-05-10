@@ -9,7 +9,8 @@ var app = express()
 app.use(bodypaser.urlencoded({
   extended: false
 }))
-app.use(bodypaser.json())
+app.use(bodypaser.json({limit: '50mb'}));
+app.use(bodypaser.urlencoded({limit: '50mb', extended: true}));
 app.use(myMiddleWare.verifyToken)
 app.all('*', function(req, res, next) {
   res.header("Access-Control-Allow-Origin", '*');
@@ -41,6 +42,7 @@ app.post('/task/start',task.start )
 app.post('/task/pause', task.pause)
 app.post('/task/resume', task.resume)
 app.post('/task/get',task.get)
+
 
 
 //node
