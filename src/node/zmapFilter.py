@@ -45,10 +45,14 @@ def zmapwork(printed):
     if os.path.exists('targets/'+nodeTaskId):
         logging.info(u'执行zmap任务'+id)
         #调用zmap,扫描白名单为path，端口为port
+        os.system('zmap -p '+port+' -B 1M -w ./targets/'+nodeTaskId+' -q -o ./zr/'+id)
         #完成后修改zmap为1
         dbo.modi_zmap_by_id(id,1)
         #读出结果数量，存入总数
-        dbo.modi_ipTotal_by_id(id,600)
+        count=0
+        for line in  open('zr/'+id, 'r'): 
+            count=count+1
+        dbo.modi_ipTotal_by_id(id,count)
     else:
         logging.info(u'出错')
         #修改Status为出错，errMsg为can't find target

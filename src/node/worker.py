@@ -30,7 +30,8 @@ task_inteval=3
 thread_count=5
 record_step=2*thread_count
 def recordResult(result,tableName):
-    dbr.saveOne(tableName,result)
+    if result!=None:
+        dbr.saveOne(tableName,result)
 def work(printed):
     task = dbo.get_one_task_to_execute()
     r = u'目前无可执行任务。'
@@ -46,9 +47,10 @@ def work(printed):
     id=task['id']
     plugin=task['plugin']['name']
     plugin = plugin[0:len(plugin) - 3]
+    ipTotal=task['ipTotal']
     r = u'任务'+id+u'未找到插件:'+plugin
     try:
-        exec("from plugin import " + plugin + " as scanning_plugin")
+        exec("from plugins import " + plugin + " as scanning_plugin")
     # 如果未找到插件(执行exec出错)，则打印信息，定时下一次执行
     except:
         if printed != r:
@@ -65,7 +67,8 @@ def work(printed):
         index=0   
         stepCounter=0
         resumeIndex=dbo.get_progress(id)        
-        for line in  open('zr/'+id, 'r'):    
+        for line in  open('zr/'+id, 'r'):       
+            line=line.strip()
             #寻找到上次的进度        
             index=index+1
             if index<=resumeIndex:
@@ -88,11 +91,12 @@ def work(printed):
             if newImpl!=1:
                 #记录执行进度
                 r=dp.getAllThreadIndex()
-                least=r[0]
-                for item in r:                    
-                    if item<least:
-                        least=item
-                dbo.record_progress(id,least)
+                if r!=None:
+                    least=r[0]
+                    for item in r:                    
+                        if item<least:
+                            least=item
+                    dbo.record_progress(id,least)
                 #定时下次执行
                 timer = threading.Timer(task_inteval, work,('',))
                 timer.start()
@@ -101,6 +105,7 @@ def work(printed):
 
          #修改状态为完成
         dbo.modi_implStatus_by_id(id,1,'')
+        dbo.record_progress(id,ipTotal)
         # 完成一个后，直接执行下一个
         timer = threading.Timer(0, work,('',))
         timer.start()

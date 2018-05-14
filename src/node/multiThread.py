@@ -36,6 +36,7 @@ class multiThread(object):
             q = {}
             q['available'] = True
             q['params'] = ()
+            q['index'] = None
             self.queue.append(q)
 
     #返回线程目前正执行的传递进来的参数
@@ -51,7 +52,8 @@ class multiThread(object):
         self.lock.acquire()
         result=[]
         for item in self.queue:
-            result.append(item["index"])
+            if item["index"]!=None:
+                result.append(item["index"])
         self.lock.release()
         return result
     def dispatch(self, args_runFunc,args_lock,index):

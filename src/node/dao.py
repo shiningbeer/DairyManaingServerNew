@@ -56,6 +56,10 @@ class daoNodeManager(object):
         coll = self.db.task
         oid = ObjectId(task_id)
         return coll.update({'_id':oid}, {"$set": {'ipTotal': ipTotal}})
+    def modi_sync_by_id(self,task_id):
+        coll = self.db.task
+        oid = ObjectId(task_id)
+        return coll.update({'_id':oid}, {"$set": {'syncStatus':0}})
     def record_progress(self,task_id,progress):
         coll = self.db.task
         oid = ObjectId(task_id)
@@ -70,11 +74,14 @@ class daoNodeManager(object):
         oid = ObjectId(task_id)
         return coll.find_one({'_id':oid})['progress']
     
+
+
     def resetZmap(self):
         coll = self.db.task
         return coll.update_many({}, {"$set": {'zmap': 0}})
     def resetImplStatus(self):
         coll = self.db.task
+        print 0
         return coll.update_many({}, {"$set": {'implStatus': 0}})
 
 class daoResult(object):
@@ -86,11 +93,12 @@ class daoResult(object):
         coll=self.db[tableName]
         coll.insert_one(document)
 if __name__ == '__main__':
-    # dbo=daoMongo()
+    dbo=daoNodeManager()
     # dbo.resetZmap()
     # dbo.resetImplStatus()
-    dbo=daoResult()
-    dbo.saveOne('haha',{'11':'11'})
+    print dbo.modi_implStatus_by_id('5af50f76f24c937566dac586',0,'')
+    # dbo=daoResult()
+    # dbo.saveOne('haha',{'11':'11'})
     
 
 #     def addNewTask(self, name, user, description, ipfiles, plugin):
