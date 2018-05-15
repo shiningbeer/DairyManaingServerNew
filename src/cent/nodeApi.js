@@ -36,6 +36,10 @@ var nodeTask={
         var param = {nodeTaskId}
         postJson(url_base+'/task/delete',token, param, callback)
     },
+    syncTask:(url_base,token,callback) => {
+        var param = {}
+        postJson(url_base+'/task/syncTask',token, param, callback)
+    },
 
     // get:(condition={}, callback)=>{
     //     var param={

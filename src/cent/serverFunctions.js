@@ -265,8 +265,7 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
             createdAt:Date.now(),
             operStatus:OPER_STATUS.implement,
             implStatus:IMPL_STATUS.normal,
-            progress:0,            
-            ipCountInFact:65,
+            progress:0, 
           }
           //获取这个node的url，token
           var nodeInfo = await new Promise((resolve, reject) => {
@@ -320,6 +319,25 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
       dbo.task.get(condition,(err,result)=>{
         err ? res.sendStatus(500) : res.json(result)
       })
+    },
+    syncNode:async()=>{
+        //取出所有node
+        var nodes=await new Promise((resolve,reject)=>{
+          dbo.node.get({},(err,rest)=>{
+              resolve(rest)
+          })
+        })
+        for(var anode of nodes){
+          let {url,token}=anode
+          nodeApi.nodeTask.syncTask(url,token,(code,body)=>{
+            console.log(body)
+          })
+        }
+        
+     
+      //依次访问节点服务器
+      //将取回的nodetask数据更新到数据库
+      //将nodetask汇聚到task
     },
   }
   const node={

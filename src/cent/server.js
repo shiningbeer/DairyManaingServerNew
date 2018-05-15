@@ -1,7 +1,7 @@
 var express = require('express')
 var bodypaser = require('body-parser')
 var multer = require('multer')
-const {myMiddleWare,user,task, node,target,plugin,connectDB}=require('./serverFunctions')
+const {myMiddleWare,user,task, node,target,plugin,nodeTask,connectDB}=require('./serverFunctions')
 
 
 
@@ -72,6 +72,10 @@ var server = app.listen(1978, function () {
   connectDB((err) => {
     err ? console.log('db connection fail!') : console.log('server starts!')
   })
+  //定时更新任务
+  setInterval(() => {
+    task.syncNode()
+}, 5000);
 
 })
 
