@@ -50,20 +50,16 @@ class daoNodeManager(object):
     def modi_implStatus_by_id(self,task_id,implStatus,errMsg):
         coll = self.db.task
         oid = ObjectId(task_id)
-        return coll.update({'_id':oid}, {"$set": {'implStatus': implStatus,'errMsg':errMsg}})
+        return coll.update({'_id':oid}, {"$set": {'implStatus': implStatus,'errMsg':errMsg,'syncStatus':0}})
     
     def modi_ipTotal_by_id(self,task_id,ipTotal):
         coll = self.db.task
         oid = ObjectId(task_id)
-        return coll.update({'_id':oid}, {"$set": {'ipTotal': ipTotal}})
-    def modi_sync_by_id(self,task_id):
-        coll = self.db.task
-        oid = ObjectId(task_id)
-        return coll.update({'_id':oid}, {"$set": {'syncStatus':0}})
+        return coll.update({'_id':oid}, {"$set": {'ipTotal': ipTotal,'syncStatus':0}})
     def record_progress(self,task_id,progress):
         coll = self.db.task
         oid = ObjectId(task_id)
-        return coll.update({'_id':oid}, {"$set": {'progress': progress}})
+        return coll.update({'_id':oid}, {"$set": {'progress': progress,'syncStatus':0}})
     
     def get_new_operStatus(self,task_id):
         coll = self.db.task
@@ -79,10 +75,15 @@ class daoNodeManager(object):
     def resetZmap(self):
         coll = self.db.task
         return coll.update_many({}, {"$set": {'zmap': 0}})
+    def resetSync(self):
+        coll = self.db.task
+        return coll.update_many({}, {"$set": {'syncStatus': 0}})
     def resetImplStatus(self):
         coll = self.db.task
-        print 0
         return coll.update_many({}, {"$set": {'implStatus': 0}})
+    def resetProgress(self):
+        coll = self.db.task
+        return coll.update_many({}, {"$set": {'progress': 0}})
 
 class daoResult(object):
     # 构造时连接数据库
@@ -95,8 +96,13 @@ class daoResult(object):
 if __name__ == '__main__':
     dbo=daoNodeManager()
     # dbo.resetZmap()
+    
+    print dbo.resetSync()
+    print dbo.resetProgress()
+    print dbo.resetImplStatus()
+    
     # dbo.resetImplStatus()
-    print dbo.modi_implStatus_by_id('5af50f76f24c937566dac586',0,'')
+    # print dbo.modi_implStatus_by_id('5af50f76f24c937566dac586',0,'')
     # dbo=daoResult()
     # dbo.saveOne('haha',{'11':'11'})
     

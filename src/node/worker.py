@@ -56,7 +56,7 @@ def work(printed):
         if printed != r:
             logging.info(r)
             printed = r
-        dbo.modi_implStatus_by_id(id,1,'can\'t find plugin')
+        dbo.modi_implStatus_by_id(id,-1,'can\'t find plugin')
         timer = threading.Timer(task_inteval,work, (printed,))
         timer.start()
         return
@@ -85,6 +85,7 @@ def work(printed):
                     if item<least:
                         least=item
                 dbo.record_progress(id,least)
+                print least
                 stepCounter=0
             #查看任务指令是否变化
             newImpl=dbo.get_new_operStatus(id)

@@ -82,7 +82,9 @@ var task = {
             syncStatus: 0
         }
         var updatestr = {
-            syncStatus: 1
+            $set: {
+                syncStatus: 1
+            }
         }
         mod(TABLES.task, wherestr, updatestr, callback)
     }

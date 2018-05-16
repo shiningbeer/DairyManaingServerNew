@@ -111,7 +111,8 @@ const task = {
     if (taskId == null || status == null)
       return res.sendStatus(415)
     var update = {
-      operStatus: status
+      operStatus: status,
+      implStatus: 0
     }
     dbo.task.update(taskId, update, (err, rest) => {
       err ? res.sendStatus(500) : res.sendStatus(200)
@@ -119,8 +120,14 @@ const task = {
   },
   syncTask: (req, res) => {
     dbo.task.get_unSync_tasks((err, result) => {
-      err ? res.sendStatus(500) : res.json(result)
-      dbo.task.mark_sync((err,result)=>{})
+      if (err)
+        res.sendStatus(500)
+      else {
+        res.json(result)
+        dbo.task.mark_sync((err, result) => {
+          console.log(err)
+        })
+      }
     })
   },
 }
