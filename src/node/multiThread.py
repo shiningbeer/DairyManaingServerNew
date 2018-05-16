@@ -82,6 +82,8 @@ class multiThread(object):
         self.threadCount = self.threadCount + 1
         if self.threadCount == self.maxThread:
             self.threadFull = True
+        while self.threadFull:
+            sleep(0.5)
         # 取得空队列
         queueIndex = None
         while queueIndex == None:

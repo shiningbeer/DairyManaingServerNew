@@ -262,6 +262,7 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
             ipRange:dispatchList[i],
             pluginList,
             ipCount:65555,
+            ipTotal:0,
             createdAt:Date.now(),
             operStatus:OPER_STATUS.implement,
             implStatus:IMPL_STATUS.normal,
@@ -320,24 +321,75 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
         err ? res.sendStatus(500) : res.json(result)
       })
     },
-    syncNode:async()=>{
+    syncNode:async()=>{       
         //取出所有node
         var nodes=await new Promise((resolve,reject)=>{
           dbo.node.get({},(err,rest)=>{
               resolve(rest)
           })
         })
+        //依次访问节点服务器
         for(var anode of nodes){
           let {url,token}=anode
           nodeApi.nodeTask.syncTask(url,token,(code,body)=>{
-            console.log(body)
+            if(code==200){
+              //将取回的nodetask数据更新到数据库
+              console.log(body)
+              for(var nodeTask of body){
+                let {nodeTaskId,progress,ipTotal,implStatus,errMsg}=nodeTask
+                dbo.nodeTask.update_by_nodeTaskId(nodeTaskId,{progress,ipTotal,implStatus,errMsg},(err,rest)=>{})
+              }              
+            }
           })
         }
-        
-     
-      //依次访问节点服务器
-      //将取回的nodetask数据更新到数据库
-      //将nodetask汇聚到task
+      //取得所有未完成任务
+      var unfinishedTasks=await new Promise((resolve,reject)=>{
+        dbo.task.get({
+          implStatus:{$ne:IMPL_STATUS.complete},
+          operStatus:{$ne:OPER_STATUS.new}
+        },(err,rest)=>{
+            resolve(rest)
+        })
+      })
+      for(var task of unfinishedTasks){
+        //找出该任务所有的节点任务
+        console.log(task._id)
+        dbo.nodeTask.get({taskId:task._id.toString()},(err,rest)=>{
+          let flag_complete=true//判断是否所有子任务都完成
+          let flag_err=false//判断是否有出错的子任务
+          let err_msg=''
+          let sum_ipTotal=0
+          let sum_ipProgress=0
+          for(var nodetask of rest){
+            let {errMsg,ipTotal,progress,implStatus}=nodetask
+            console.log(implStatus)
+            if(implStatus!=IMPL_STATUS.complete)
+              flag_complete=false
+            if(implStatus==IMPL_STATUS.wrong){
+              flag_err=true
+              err_msg=err_msg+errMsg+'; '
+            }
+            sum_ipProgress=sum_ipProgress+progress
+            sum_ipTotal=sum_ipTotal+ipTotal
+          }
+          if(flag_complete){
+            //标记任务已完成
+            dbo.task.update_by_taskId(task._id,{implStatus:IMPL_STATUS.complete,operStatus:OPER_STATUS.complete},(err,rest)=>{})
+          }           
+
+          if(err_msg){
+            //标记任务出错，记录错误信息
+            dbo.task.update_by_taskId(task._id,{implStatus:IMPL_STATUS.wrong,errMsg:err_msg},(err,rest)=>{})
+          }
+          //记录进度和总数
+          sum_ipTotal==0?percent=0:percent=(sum_ipProgress/sum_ipTotal)*100
+          
+          dbo.task.update_by_taskId(task._id,{progress:sum_ipProgress,ipTotal:sum_ipTotal,percent:percent},(err,rest)=>{})
+          if(percent==100)
+            dbo.task.update_by_taskId(task._id,{implStatus:IMPL_STATUS.complete,operStatus:OPER_STATUS.complete},(err,rest)=>{})
+            
+        })
+      }
     },
   }
   const node={
