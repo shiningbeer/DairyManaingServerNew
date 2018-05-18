@@ -1,11 +1,14 @@
 var fs = require('fs')
 var dbo = require('./nDbo')
+var dbResult = require('./nDbo')
+
 var jwt = require('jwt-simple')
 var moment = require('moment')
 
 
 const connectDB = (callback) => {
   dbo.connect("mongodb://localhost:27017", 'nodeDB', callback)
+  dbResult.connect("mongodb://localhost:27017", 'result', callback)
 }
 
 const myMiddleWare = {
@@ -60,7 +63,6 @@ const task = {
 
     //todo: verify validity of newNodeTask
     var {
-      pluginList,
       ipRange,
       nodeTaskId
     } = newNodeTask
@@ -70,21 +72,15 @@ const task = {
     }
     fs.writeFileSync('./targets/' + nodeTaskId, stringIp)
     delete newNodeTask.ipRange
-
-    delete newNodeTask.pluginList
-    for (var plugin of pluginList) {
-      var task = {
-        ...newNodeTask,
-        plugin,
-        zmap: 0,
-        syncStatus: 0,
-      }
-      dbo.task.add(task, (err, rest) => {
-        if (err)
-          res.sendStatus(500)
-      })
+    var task = {
+      ...newNodeTask,
+      zmap: 0,
+      syncStatus: 0,
     }
-    res.sendStatus(200)
+    dbo.task.add(task, (err, rest) => {
+      err ? res.sendStatus(500) : res.sendStatus(200)
+    })
+
 
   },
   delete: (req, res) => {
@@ -100,6 +96,18 @@ const task = {
     if (condition == null)
       condition = {}
     dbo.task.get(condition, (err, result) => {
+      err ? res.sendStatus(500) : res.json(result)
+    })
+  },
+  getResult: (req, res) => {
+    let {
+      nodeTaskId,
+      skip,
+      limit
+    } = req.body
+    if (nodeTaskId == null || skip == null || limit == null)
+      return res.sendStatus(415)
+    dbResult.result.getLimit(nodeTaskId, skip, limit, (err, result) => {
       err ? res.sendStatus(500) : res.json(result)
     })
   },
@@ -124,9 +132,7 @@ const task = {
         res.sendStatus(500)
       else {
         res.json(result)
-        dbo.task.mark_sync((err, result) => {
-          console.log(err)
-        })
+        dbo.task.mark_sync((err, result) => {})
       }
     })
   },
