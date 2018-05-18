@@ -47,7 +47,19 @@ var find = (col, wherestr = {}, callback) => {
 
 
 
+
 /* exposed database api */
+
+//result
+var result = {
+    getLimit: (tName, skip, limit, callback) => {
+        dbo.collection(tName).find().skip(skip).limit(limit).toArray((err, result) => {
+            callback(err, result)
+        });
+    }
+}
+
+
 //task
 var task = {
     add: (newNodeTask, callback) => {
@@ -168,6 +180,7 @@ var setting = {
 
 module.exports = {
     connect,
+    result,
     task,
     setting,
 }

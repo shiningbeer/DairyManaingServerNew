@@ -45,6 +45,7 @@ def work(printed):
         return
     # 如果有任务
     id=task['id']
+    nodetaskid=task['nodeTaskId']
     plugin=task['plugin']['name']
     plugin = plugin[0:len(plugin) - 3]
     ipTotal=task['ipTotal']
@@ -74,7 +75,7 @@ def work(printed):
             if index<=resumeIndex:
                 continue
             #分派任务给线程        
-            dp.dispatch((line,),(id,),index)
+            dp.dispatch((line,),(nodetaskid,),index)
             stepCounter=stepCounter+1
             #每扫描record_step个记录一次进度
             if stepCounter==record_step:

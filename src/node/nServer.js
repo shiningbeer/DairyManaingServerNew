@@ -43,6 +43,7 @@ app.post('/user/delete', user.delete)
 app.post('/task/add', task.add)
 app.post('/task/delete', task.delete)
 app.post('/task/get', task.get)
+app.post('/task/getResult', task.getResult)
 app.post('/task/syncStatus', task.syncStatus)
 app.post('/task/syncTask', task.syncTask)
 
