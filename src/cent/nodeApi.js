@@ -40,6 +40,11 @@ var nodeTask={
         var param = {}
         postJson(url_base+'/task/syncTask',token, param, callback)
     },
+    getResult:(url_base,token,nodeTaskId,skip,limit,callback) => {
+        var param = {nodeTaskId,skip,limit}
+        postJson(url_base+'/task/getResult',token, param, callback)
+    },
+   
 
     // get:(condition={}, callback)=>{
     //     var param={

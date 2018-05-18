@@ -254,6 +254,13 @@ var nodeTask={
     },
     get :(wherestr,callback)=>{
         find(TABLES.nodeTask,wherestr,callback)
+    },
+    getOne:(id,callback)=>{
+        var _id=ObjectId(id)
+        var wherestr = {
+            _id: _id
+        }
+        findOne(TABLES.nodeTask,wherestr,callback)
     }
 }
 

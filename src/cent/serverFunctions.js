@@ -168,17 +168,24 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
         return res.sendStatus(415)
       //todo: verify validity of newtask
       //todo: verify if the plugin designated exists in local disk, if not, return the message 'missing plugin' to the server 
-      let newTaskToAdd={
-        ...newTask,
-        createdAt: Date.now(),
-        user:req.tokenContainedInfo.user,
-        percent:0,
-        operStatus:OPER_STATUS.new,
-        implStatus:IMPL_STATUS.normal,
+      let {pluginList,name}=newTask
+      delete newTask.pluginList
+      delete newTask.name
+      for(var plugin of pluginList){
+        let name_without_ext=plugin.name.substring(0,plugin.name.length-3)
+        let newTaskToAdd={
+          ...newTask,
+          name:name+'--'+name_without_ext,
+          plugin,
+          createdAt: Date.now(),
+          user:req.tokenContainedInfo.user,
+          percent:0,
+          operStatus:OPER_STATUS.new,
+          implStatus:IMPL_STATUS.normal,
+        }
+        dbo.task.add(newTaskToAdd, (err,rest) => {})
       }
-      dbo.task.add(newTaskToAdd, (err,rest) => {
-        err ? res.sendStatus(500) : res.json('ok')
-      })
+      res.json('ok')
     },
     delete:(req, res) => {
       var taskId = req.body.taskId
@@ -230,7 +237,7 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
       var nodes = req.body.nodeList
       if (task == null||nodes==null) 
         return res.sendStatus(415)
-      var {targetList,pluginList}=task
+      var {targetList,plugin}=task
       //以下代码假定数据库操作不出问题，未作处理
       var asyncActions=async () => {
         let allIpRange=[],totalsum=0
@@ -260,7 +267,7 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
             taskId:task.id,
             node:nodes[i],
             ipRange:dispatchList[i],
-            pluginList,
+            plugin,
             ipCount:65555,
             ipTotal:0,
             createdAt:Date.now(),
@@ -321,6 +328,55 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
         err ? res.sendStatus(500) : res.json(result)
       })
     },
+    getDetail: (req, res) => {
+      var id = req.body.id
+      if (id == null) 
+        return res.sendStatus(415)
+      dbo.task.getOne(id,(err,result)=>{
+        err ? res.sendStatus(500) : res.json(result)
+      })
+    },
+    getNodeTasks: (req, res) => {
+      var id = req.body.id
+      console.log(id)
+      if (id == null) 
+        return res.sendStatus(415)
+      dbo.nodeTask.get({taskId:id},(err,result)=>{
+        err ? res.sendStatus(500) : res.json(result)
+      })
+    },
+    nodeTaskResult: (req, res) => {
+      var {nodeTaskId,nodeId,skip,limit} = req.body
+      if (nodeTaskId == null||skip==null||limit==null||nodeId==null) 
+        return res.sendStatus(415)
+
+      var asyncActions=async()=>{
+        var anode=await new Promise((resolve,reject)=>{
+          dbo.node.getOne(nodeId,(err,result)=>{
+            resolve(result)
+          })
+        })
+        let {url,token}=anode
+        var taskResult=await new Promise((resolve,reject)=>{
+          nodeApi.nodeTask.getResult(url,token,nodeTaskId,skip,limit,(code,body)=>{
+            //待做，如果code不为200，设置该节点不在线
+            console.log(code,body)
+            if(code==200){
+              resolve(body)          
+            }
+            else
+              resolve('无法连接节点')
+          })
+        })
+        
+        
+        console.log(taskResult)
+        res.json(taskResult)
+
+      }
+      asyncActions()
+     
+    },
     syncNode:async()=>{       
         //取出所有node
         var nodes=await new Promise((resolve,reject)=>{
@@ -332,9 +388,9 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
         for(var anode of nodes){
           let {url,token}=anode
           nodeApi.nodeTask.syncTask(url,token,(code,body)=>{
+            //待做，如果code不为200，设置该节点不在线
             if(code==200){
               //将取回的nodetask数据更新到数据库
-              console.log(body)
               for(var nodeTask of body){
                 let {nodeTaskId,progress,ipTotal,implStatus,errMsg}=nodeTask
                 dbo.nodeTask.update_by_nodeTaskId(nodeTaskId,{progress,ipTotal,implStatus,errMsg},(err,rest)=>{})
@@ -346,7 +402,7 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
       var unfinishedTasks=await new Promise((resolve,reject)=>{
         dbo.task.get({
           implStatus:{$ne:IMPL_STATUS.complete},
-          operStatus:{$ne:OPER_STATUS.new}
+          operStatus:OPER_STATUS.implement,
         },(err,rest)=>{
             resolve(rest)
         })
