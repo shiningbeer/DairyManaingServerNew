@@ -369,8 +369,6 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
           })
         })
         
-        
-        console.log(taskResult)
         res.json(taskResult)
 
       }
