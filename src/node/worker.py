@@ -8,7 +8,6 @@ import threading
 from dao import daoNodeManager as dbo
 from dao import daoResult as dboR
 import logging
-from IPy import IP
 from time import sleep
 from multiThread import multiThread
 # 设置默认的level为DEBUG

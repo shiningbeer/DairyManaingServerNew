@@ -7,7 +7,6 @@ import sys
 import threading
 from dao import daoNodeManager as dbo
 import logging
-from IPy import IP
 from time import sleep
 # 设置默认的level为DEBUG
 # 设置log的格式
