@@ -6,7 +6,6 @@ import datetime
 import sys
 import threading
 from dao import daoNodeManager as dbo
-from dao import daoResult as dboR
 import logging
 from time import sleep
 from multiThread import multiThread
@@ -24,13 +23,12 @@ if sys.getdefaultencoding() != default_encoding:
 
 
 dbo=dbo()
-dbr=dboR()
 task_inteval=3
 thread_count=5
 record_step=2*thread_count
 def recordResult(result,tableName):
     if result!=None:
-        dbr.saveOne(tableName,result)
+        dbo.saveResult(tableName,result)
 def work(printed):
     task = dbo.get_one_task_to_execute()
     r = u'目前无可执行任务。'

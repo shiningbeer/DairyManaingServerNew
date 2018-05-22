@@ -1,6 +1,5 @@
 var fs = require('fs')
 var dbo = require('./nDbo')
-var dbResult = require('./nDbo')
 
 var jwt = require('jwt-simple')
 var moment = require('moment')
@@ -8,14 +7,17 @@ var moment = require('moment')
 
 const connectDB = (callback) => {
   dbo.connect("mongodb://localhost:27017", 'nodeDB', callback)
-  dbResult.connect("mongodb://localhost:27017", 'result', callback)
 }
 
 const myMiddleWare = {
   verifyToken: (req, res, next) => {
     //中间件总是执行两次，其中有一次没带上我的数据，所以忽略掉其中一次
     if (req.get('access-control-request-method') == null) {
+<<<<<<< HEAD
       if(req.originalUrl!='/task/syncTask')
+=======
+      if (req.originalUrl != '/task/syncTask')
+>>>>>>> 887bda9bda8ee77ae606adb4e9c4d7b9344225ed
         console.log(req.originalUrl + ' has been accessed by %s at %s', req.ip, moment(Date.now()).format('YYYY-MM-DD HH:mm'))
       if (req.originalUrl != '/user/gettoken') {
         var token = req.get('token')
@@ -79,6 +81,7 @@ const task = {
       syncStatus: 0,
     }
     dbo.task.add(task, (err, rest) => {
+      console.log(rest)
       err ? res.sendStatus(500) : res.sendStatus(200)
     })
 
@@ -108,7 +111,7 @@ const task = {
     } = req.body
     if (nodeTaskId == null || skip == null || limit == null)
       return res.sendStatus(415)
-    dbResult.result.getLimit(nodeTaskId, skip, limit, (err, result) => {
+    dbo.result.getLimit(nodeTaskId, skip, limit, (err, result) => {
       err ? res.sendStatus(500) : res.json(result)
     })
   },
