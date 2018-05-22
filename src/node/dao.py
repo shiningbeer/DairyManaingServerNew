@@ -70,7 +70,9 @@ class daoNodeManager(object):
         oid = ObjectId(task_id)
         return coll.find_one({'_id':oid})['progress']
     
-
+    def saveResult(self,tableName,document):
+        coll=self.db[tableName]
+        coll.insert_one(document)
 
     def resetZmap(self):
         coll = self.db.task
@@ -85,14 +87,7 @@ class daoNodeManager(object):
         coll = self.db.task
         return coll.update_many({}, {"$set": {'progress': 0}})
 
-class daoResult(object):
-    # 构造时连接数据库
-    def __init__(self):
-        self.client = mc()
-        self.db = self.client.result
-    def saveOne(self,tableName,document):
-        coll=self.db[tableName]
-        coll.insert_one(document)
+
 if __name__ == '__main__':
     dbo=daoNodeManager()
     # dbo.resetZmap()
