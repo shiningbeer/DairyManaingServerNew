@@ -13,11 +13,7 @@ const myMiddleWare = {
   verifyToken: (req, res, next) => {
     //中间件总是执行两次，其中有一次没带上我的数据，所以忽略掉其中一次
     if (req.get('access-control-request-method') == null) {
-<<<<<<< HEAD
       if(req.originalUrl!='/task/syncTask')
-=======
-      if (req.originalUrl != '/task/syncTask')
->>>>>>> 887bda9bda8ee77ae606adb4e9c4d7b9344225ed
         console.log(req.originalUrl + ' has been accessed by %s at %s', req.ip, moment(Date.now()).format('YYYY-MM-DD HH:mm'))
       if (req.originalUrl != '/user/gettoken') {
         var token = req.get('token')
