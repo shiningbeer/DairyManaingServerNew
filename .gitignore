@@ -1,3 +1,6 @@
 /node_modules
 /src/cent/uploadPlugins
 /src/node/uploadPlugins
+/src/node/targets
+/src/node/zr
+*.pyc
