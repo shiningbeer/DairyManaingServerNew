@@ -27,7 +27,7 @@ task_inteval=3
 thread_count=5
 record_step=2*thread_count
 def recordResult(result,tableName):
-    if result!=None:
+    if result!=None and result!={}:
         dbo.saveResult(tableName,result)
 def work(printed):
     task = dbo.get_one_task_to_execute()
