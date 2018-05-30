@@ -390,8 +390,8 @@ const changeTaskStatus=async (req,res,newOperStatus)=>{
             if(code==200){
               //将取回的nodetask数据更新到数据库
               for(var nodeTask of body){
-                let {nodeTaskId,progress,ipTotal,implStatus,errMsg}=nodeTask
-                dbo.nodeTask.update_by_nodeTaskId(nodeTaskId,{progress,ipTotal,implStatus,errMsg},(err,rest)=>{})
+                let {nodeTaskId,progress,ipTotal,implStatus,errMsg,zmap}=nodeTask
+                dbo.nodeTask.update_by_nodeTaskId(nodeTaskId,{progress,ipTotal,implStatus,errMsg,zmap},(err,rest)=>{})
               }              
             }
           })

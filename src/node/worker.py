@@ -67,6 +67,7 @@ def work(printed):
         resumeIndex=dbo.get_progress(id)        
         for line in  open('zr/'+id, 'r'):       
             line=line.strip()
+            logging.info
             #寻找到上次的进度        
             index=index+1
             if index<=resumeIndex:
