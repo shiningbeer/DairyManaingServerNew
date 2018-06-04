@@ -11,7 +11,12 @@ default_encoding = 'utf-8'
 if sys.getdefaultencoding() != default_encoding:
     reload(sys)
     sys.setdefaultencoding(default_encoding)
-
+# -*- coding: utf-8 -*-
+from threading import Thread
+import time
+class TimeoutException(Exception):
+  pass
+ThreadStop = Thread._Thread__stop#获取私有函数
 
 class multiThread(object):
     '''
@@ -38,8 +43,33 @@ class multiThread(object):
             q['params'] = ()
             q['index'] = None
             self.queue.append(q)
-
-    #返回线程目前正执行的传递进来的参数
+    def __runFunc(self,func,arg,timeout):
+        class TimeLimited(Thread):
+            def __init__(self,_error= None,):
+                Thread.__init__(self)
+                self._error = _error
+            def run(self):
+                try:
+                    self.result = func(*arg)
+                except Exception,e:
+                    self._error =e
+            def _stop(self):
+                if self.isAlive():
+                    ThreadStop(self)
+        t = TimeLimited()
+        t.start()
+        t.join(timeout)
+        if isinstance(t._error,TimeoutException):
+            t._stop()
+            print ('timeout')
+            return None 
+        if t.isAlive():
+            t._stop()
+            print ('timeout')
+            return None 
+        if t._error is None:
+            return t.result 
+        return None
     def getAllThreadParams(self):
         self.lock.acquire()
         result=[]
@@ -67,7 +97,7 @@ class multiThread(object):
         def threadFunc(queueIndex, args_runFunc,args_lock,index):
             self.queue[queueIndex]['params'] = args_runFunc
             self.queue[queueIndex]['index'] = index
-            r = self.runFunc(*args_runFunc)  # 执行函数
+            r = self.__runFunc(self.runFunc,args_runFunc,2)  # 执行函数
             # print str(args_runFunc) + '退出了'
             self.lock.acquire()
             self.thread_func_access_lock(r,*args_lock)
@@ -104,7 +134,8 @@ if __name__ == '__main__':
     def scan(x, y):
         # print '我是' + str(x) + ',' + str(y)
         # pass
-        sleep(3.01 / (y + 1))
+        if x>5:
+            sleep(3)
         return x + y
 
     def record(r,f,i,y):
@@ -119,8 +150,7 @@ if __name__ == '__main__':
             while dp.threadFull:
                 sleep(0.1)
             dp.dispatch((i, y),(f,i,y),(i,y))
-        if i==8:
-            print dp.getAllThreadIndex()
+        print dp.getAllThreadIndex()
     sleep(3)
     f.close()
     print "ok"

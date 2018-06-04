@@ -1,9 +1,4 @@
 /node_modules
-<<<<<<< HEAD
-=======
-/src/cent/uploadPlugins
-/src/node/uploadPlugins
->>>>>>> 0b0c059063081e114f4772fc64f0b699de2388f8
 /src/node/targets
 /src/node/zr
 *.pyc
